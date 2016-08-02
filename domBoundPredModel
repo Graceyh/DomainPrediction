@@ -1,0 +1,234 @@
+import numpy as np
+import pandas as pd
+
+from sklearn import linear_model
+from sklearn import cross_validation
+from sklearn import svm
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.feature_selection import VarianceThreshold
+from sklearn.svm import LinearSVC
+from sklearn.feature_selection import SelectFromModel
+from sklearn import metrics
+from sklearn.cross_validation import StratifiedKFold
+
+import xgboost as xgb
+# plotting
+import matplotlib.pyplot as plt
+# %matplotlib inline
+
+import seaborn as sns
+
+# read chunk data
+# Perc_chunk(allfeature1).csv: positive/ negative = 8000/9650
+# chunk_data = pd.read_csv("/Users/Graceyh/Desktop/Perc_chunk(allfeature1).csv")
+chunk_data = pd.read_csv("/Users/Graceyh/Desktop/Perc_chunk(allfeature1).csv")
+print(chunk_data.columns)
+chunk_data_AA = pd.read_csv("/Users/Graceyh/Google Drive/aboutDissertation/Data/chunkAAperc1.csv")
+print(len(chunk_data[chunk_data['dbInd']==1]))
+print(len(chunk_data[chunk_data['dbInd']==0]))
+# drop the 'AA_column' column of chunk_data to form the dataframe to build model
+chunk_data.drop(chunk_data.columns[0],axis=1,inplace=True)
+
+# shuffle the dataset
+chunk_data = chunk_data.sample(frac = 1)
+print(chunk_data.columns)
+
+#-----------------------------------------------------------------------------#
+# choose 11 features with top F scores
+xgb_features1 = ['dbInd', 'sum_volume','avg_hydrophobicity','solvationFreeEnergy', 'avg_Flexibility', 'avg_solvAccess', 'avg_buriedProportion', 'entropy','sum_size','perc_P','perc_L', 'perc_K']
+# choose 11 features with top F scores
+# xgb_features2 = ['dbInd', 'solvationFreeEnergy','avg_Flexibility', 'sum_volume','avg_solvAccess', 'avg_hydrophobicity','sum_size', 'entropy','perc_E', 'perc_P', 'perc_K']
+
+# choose features with importance by RF greater than or equal to 0.03
+RF_features1 = ['dbInd', 'perc_P', 'avg_hydrophobicity', 'sum_size', 'sum_volume', 'sum_netCharge', 'avg_Flexibility', 'avg_solvAccess', 'avg_buriedProportion', 'solvationFreeEnergy', 'entropy']
+# choose features with importance by RF greater than or equal to 0.03
+RF_features2 = ['dbInd', 'perc_P', 'avg_hydrophobicity', 'sum_size', 'sum_volume', 'sum_netCharge', 'avg_Flexibility', 'avg_solvAccess', 'avg_buriedProportion', 'solvationFreeEnergy', 'entropy']
+
+# use dataset of xgb_features
+# chunk_data = chunk_data[xgb_features1]
+
+# use dataset of RFfeatures
+# chunk_data = chunk_data[RF_features2]
+
+#-----------------------------------------------------------------------------#
+# 2. model on chunk data
+# 2.1 prepare the imputs of all the features for the regression model
+y_chunk = chunk_data['dbInd']
+# print(y_chunk.value_counts())
+X_chunk = chunk_data.copy().drop(['dbInd'],axis=1)
+print(X_chunk.shape)
+print(X_chunk.columns)
+
+# 2.2 randomly split the chunk dataset into training set and test set with 90%:10% ratio
+# X_chunk_train,X_chunk_test,y_chunk_train, y_chunk_test = cross_validation.train_test_split(X_chunk,y_chunk, test_size=0.1, random_state=0)
+
+#-----------------------------------------------------------------------------#
+# feature selection
+# 1. Lasso
+# lsvc = LinearSVC(C=0.01, penalty="l1", dual=False).fit(X_chunk,y_chunk)
+# model = SelectFromModel(lsvc, prefit=True)
+# X_chunk_new = pd.DataFrame(model.transform(X_chunk))
+# print(X_chunk_new.head())
+# print(X_chunk_new.shape)
+
+# result: delete 4 features from the original set
+# --------------------------------------------#
+# 2. Removing features with low variance
+# sel = VarianceThreshold(threshold=0.6)
+# X_chunk_new = pd.DataFrame(sel.fit_transform(X_chunk))
+# print(X_chunk_new.head())
+# result: delete 4 features with low variance
+# --------------------------------------------#
+
+# randomly split the new chunk dataset into training set and test set with 90%:10% ratio
+# X_chunk_train_new,X_chunk_test_new,y_chunk_train_new, y_chunk_test_new = cross_validation.train_test_split(X_chunk_new,y_chunk, test_size=0.1, random_state=0)
+#-----------------------------------------------------------------------------#
+# 2.3 train the linear model on the training data
+# LR_clf_chunk = linear_model.Lasso(alpha = 0.1)
+# LR_clf_chunk.fit(X_chunk_train,y_chunk_train)
+# # Lasso(alpha=0.1, copy_X=True, fit_intercept=True, max_iter=1000,normalize=False, positive=False, precompute=False, random_state=None,selection='cyclic', tol=0.0001, warm_start=False)
+# # predict accuracy
+# LR_acc_chunk= LR_clf_chunk.score(X_chunk_test,y_chunk_test)
+# print("Accuracy of linear regression: {:.4f}".format(LR_acc_chunk))
+
+# #-----------------------------------------------------------------------------#
+#2.4 train the logistic regression model on the training data
+# Logistic_clf_chunk = linear_model.LogisticRegression()
+# Logistic_clf_chunk.fit(X_chunk_train,y_chunk_train)
+
+# # predict accuracy
+# Logistic_acc_chunk= Logistic_clf_chunk.score(X_chunk_test,y_chunk_test)
+# print("Accuracy of logistic regression: {:.4f}".format(Logistic_acc_chunk))
+
+#-----------------------------------------------------------------------------#
+# # # 2.42 train the logistic regression model on the training data(after feature selection)
+# # Logistic_clf_chunk_new = linear_model.LogisticRegression()
+# # Logistic_clf_chunk_new.fit(X_chunk_train_new,y_chunk_train_new)
+
+# # # predict accuracy
+# # Logistic_acc_chunk_new = Logistic_clf_chunk_new.score(X_chunk_test_new,y_chunk_test_new)
+# # print("Accuracy of logistic regression: {:.4f}".format(Logistic_acc_chunk_new))
+# #-----------------------------------------------------------------------------#
+# # # 2.5 train the SGDclassifier on the training data
+# SGD_clf_chunk = linear_model.SGDClassifier()
+# SGD_clf_chunk.fit(X_chunk_train,y_chunk_train)
+
+# # predict accuracy
+# SGD_acc_chunk= SGD_clf_chunk.score(X_chunk_test,y_chunk_test)
+# print("Accuracy of SGD: {:.4f}".format(SGD_acc_chunk))
+#-----------------------------------------------------------------------------#
+# 2.6 train the SVM model on the training data
+#----------------------------------------------------#
+# 2.61 train SVM classifier without cross validation
+
+# SVM_clf_chunk = svm.SVC(decision_function_shape='ovo')
+# SVM_clf_chunk.fit(X_chunk_train,y_chunk_train)
+# predict accuracy
+# SVM_acc_chunk= SVM_clf_chunk.score(X_chunk_test,y_chunk_test)
+# print("Accuracy of SVM: {:.4f}".format(SVM_acc_chunk))
+
+#----------------------------------------------------#
+# 2.62 train SVM classifier with 5-fold cross validation
+random_state = np.random.RandomState(0)
+
+# 5-fold cross validation
+cv_SVM = StratifiedKFold(y_chunk,n_folds = 5)
+SVM_clf_chunk = svm.SVC(probability = True, random_state = random_state, decision_function_shape='ovo')
+
+mean_tprSVM = 0.0
+mean_fprSVM = np.linspace(0,1,100)
+all_tprSVM = []
+
+print(list(enumerate(cv_SVM)))
+for i, (train,test) in enumerate(cv_SVM):
+    print(train,test)
+    pred_SVM = SVM_clf_chunk.fit(X_chunk[train],y_chunk[train]).predict(X_chunk[test])
+    # compute ROC curve and area under the curve
+    fprSVM, tprSVM, thresholds = metrics.roc_curve(y_chunk[test], pred_SVM[:,1])
+    mean_tprSVM += interp(mean_fprSVM, fprSVM, tprSVM)
+    mean_tprSVM[0] = 0.0
+    roc_auc = metrics.auc(fprSVM, tprSVM)
+    plt.plot(fprSVM, tprSVM, lw = 1, label = 'ROC fold %d (area = %0.2f)' %(i,roc_auc))
+
+plt.plot([0,1], [0,1], '--', color = (0.6, 0.6, 0.6), label = 'Luck')
+
+mean_tprSVM /= len(cv_SVM)
+mean_tprSVM[-1] = 1.0
+mean_auc = metrics.auc(mean_fprSVM, mean_tprSVM)
+plt.plot(mean_fprSVM, mean_tprSVM, 'k--', label = 'Mean ROC (area = %0.2f)' % mean_auc, lw = 2)
+plt.xlim([-0.05, 1.05])
+plt.ylim([-0.05, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('SVM Domain Boundary prediction(1:1) ROC')
+plt.legend(loc = "lower right")
+plt.show()
+
+# #--------------------------------#
+# linSVC_clf_chunk = svm.LinearSVC()
+# linSVC_clf_chunk.fit(X_chunk_train,y_chunk_train)
+
+# # predict accuracy
+# linSVC_acc_chunk= linSVC_clf_chunk.score(X_chunk_test,y_chunk_test)
+# print("Accuracy of linear SVC regression: {:.4f}".format(linSVC_acc_chunk))
+
+#-----------------------------------------------------------------------------#
+# 2.5 train the random forest classifier on the training data
+
+#----------------------------------------------------#
+# # 2.51 train RF classifier without cross validation
+# RF_clf_chunk = RandomForestClassifier(n_estimators=10)
+# RF_clf_chunk.fit(X_chunk_train,y_chunk_train)
+
+# # predict accuracy
+# RF_acc_chunk= RF_clf_chunk.score(X_chunk_test,y_chunk_test)
+# print("Accuracy of RF: {:.4f}".format(RF_acc_chunk))
+
+# # draw feature importance
+# plt.plot(RF_clf_chunk.feature_importances_)
+# plt.title("Feature importance by Random Forest Model")
+# plt.show()
+#----------------------------------------------------#
+# 2.52 train RF classifier with 5-fold cross validation
+# 5-fold cross validation
+cv_RF = StratifiedKFold(y_chunk,n_folds = 5)
+RF_clf_chunk = RandomForestClassifier(n_estimators=10)
+
+mean_tprRF = 0.0
+mean_fprRF = np.linspace(0,1,100)
+all_tprRF = []
+
+for i, (train,test) in enumerate(cv_RF):
+    pred_RF = RF_clf_chunk.fit(X_chunk[train],y_trunk[train]).predict(X_trunk[test])
+    # compute ROC curve and area under the curve
+    fprRF, tprRF, thresholds = metrics.roc_curve(y_trunk[test], pred_RF[:,1])
+    mean_tprRF += interp(mean_fprRF, fprRF, tprRF)
+    mean_tprRF[0] = 0.0
+    roc_auc = metrics.auc(fprRF, tprRF)
+    plt.plot(fprRF, tprRF, lw = 1, label = 'ROC fold %d (area = %0.2f)' %(i,roc_auc))
+
+plt.plot([0,1], [0,1], '--', color = (0.6, 0.6, 0.6), label = 'Luck')
+
+mean_tprRF /= len(cv_RF)
+mean_tprRF[-1] = 1.0
+mean_auc = metrics.auc(mean_fprRF, mean_tprRF)
+plt.plot(mean_fprRF, mean_tprRF, 'k--', label = 'Mean ROC (area = %0.2f)' % mean_auc, lw = 2)
+plt.xlim([-0.05, 1.05])
+plt.ylim([-0.05, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Random Forest Domain Boundary prediction(1:1) ROC')
+plt.legend(loc = "lower right")
+plt.show()
+#-----------------------------------------------------------------------------#
+# 2.6 train the XGBclassifier on the training data
+# xgb_clf_chunk = xgb.XGBClassifier()
+# xgb_clf_chunk.fit(X_chunk_train,y_chunk_train)
+
+# # predict accuracy
+# xgb_acc_chunk= xgb_clf_chunk.score(X_chunk_test,y_chunk_test)
+# print("Accuracy of xgb: {:.4f}".format(xgb_acc_chunk))
+
+# # draw feature importance
+# xgb.plot_importance(xgb_clf_chunk,title = 'Feature importance',xlabel = 'F score', ylabel = 'Features', grid = True )
+# plt.show()
