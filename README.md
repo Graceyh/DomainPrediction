@@ -1,5 +1,9 @@
 # DomainPrediction
 dissertation project
 
-Perc_chunk(allfeatureLen13).csv is chunk sequence file of 13-AA length
+The implementation procedure of domain number prediction follows order below:
+data integration->  sequence representation -> modelling -> parameter tuning -> evaluation
 
+The implementation procedure of domain boundary prediction follows order below:
+
+data integration-> chunk data construction -> sequence representation -> modelling -> parameter tuning -> evaluation
